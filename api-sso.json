@@ -1,0 +1,370 @@
+{
+"openapi": "3.0.3",
+"info": {
+"title": "Ezihub SSO",
+"description": "## Authentication\n\nThis API is authenticated with an API key that will be provided to you. Pass the api key as header called \"x-api-key\"\n\n### Cross-Origin Resource Sharing\n\nThis API features Cross-Origin Resource Sharing (CORS) implemented in compliance with [W3C spec](https://www.w3.org/TR/cors/).\nAnd that allows cross-domain communication from the browser.\nAll responses have a wildcard same-origin which makes them completely public and accessible to everyone, including any code on any site.\n\n## Single Sign On\n\nFor the Vendors the are integrating with the SSO (Single Sign On) of Ezihub, please refer to documentation related to the routes `/oauth`.\nThe implementation follows the [Oauth 2.0 standard](https://oauth.net/2/).\n\n[Authorization code grant type](https://oauth.net/2/grant-types/authorization-code/) sequence:\n\n1.  open or redirect to `/oauth/authorize`, that will render a login page where you user can enter his credentials.\n2.  after the user logs in, you will receive the authorization code at the `redirect_uri` that you specified.\n3.  use the code to call the `/oauth/token` endpoint and obtain an access token.\n\n[Password grant type](https://oauth.net/2/grant-types/password/) sequence:\n\n1.  call the endpoint `/oauth/sso/login` with the user credentials and the client id.\n2.  in the response you will receive the redirect url with the authorization code.\n3.  use the code to call the `/oauth/token` endpoint and obtain an access token.\n\nEzihub authenticated user sequence:\n\n1.  the user will authenticate on the Ezihub dashboard, on the dashboard home they will present with the list of vendors that they have access to.\n2.  the user click on your tile, the dashboard will then redirect to the callback url specified with attached `?code=<access token>`.\n\nUltimately you can call `/oauth/profile` passing the obtained access token as a Bearer token to check if the token is still valid and fetch user profile details.\n",
+"version": "1.0.0"
+},
+"components": {
+"securitySchemes": {
+"jwtAuth": {
+"type": "http",
+"scheme": "bearer",
+"bearerFormat": "JWT"
+},
+"bearerAuth": {
+"type": "http",
+"scheme": "bearer",
+"bearerFormat": "JWT"
+},
+"apiKey": {
+"type": "apiKey",
+"in": "header",
+"name": "x-api-key"
+}
+},
+"schemas": {}
+},
+"paths": {
+"/login": {
+"get": {
+"summary": "Get Login",
+"responses": {
+"200": {
+"description": "Default Response"
+}
+}
+}
+},
+"/oauth/token": {
+"post": {
+"summary": "Get the Oauth Token",
+"tags": [
+"/oauth"
+],
+"description": "Generate the OAuth Token with the authorization code returned from the callback",
+"requestBody": {
+"content": {
+"application/x-www-form-urlencoded": {
+"schema": {
+"type": "object",
+"properties": {
+"code": {
+"type": "string",
+"description": "Code received from the callback."
+},
+"client_id": {
+"type": "string",
+"description": "The client ID of your application."
+},
+"client_secret": {
+"type": "string",
+"description": "The client secret of your application."
+},
+"grant_type": {
+"type": "string",
+"default": "authorization_code"
+},
+"redirect_uri": {
+"type": "string",
+"description": "The URL in your web application where users will be redirected after authorization. This value needs to be URL encoded and match the authorized URL.",
+"format": "uri"
+}
+},
+"required": [
+"code",
+"client_id",
+"client_secret",
+"grant_type",
+"redirect_uri"
+],
+"additionalProperties": false
+}
+}
+},
+"required": true
+},
+"responses": {
+"200": {
+"description": "Default Response"
+}
+}
+}
+},
+"/oauth/authorize": {
+"get": {
+"summary": "Oauth Authorize",
+"tags": [
+"/oauth"
+],
+"description": "Starts the OAuth process and render the login page",
+"parameters": [
+{
+"schema": {
+"type": "string"
+},
+"in": "query",
+"name": "client_id",
+"required": true,
+"description": "The client ID of your application."
+},
+{
+"schema": {
+"type": "string",
+"format": "uri"
+},
+"in": "query",
+"name": "redirect_uri",
+"required": true,
+"description": "The URL in your web application where users will be redirected after authorization. This value needs to be URL encoded and match the authorized URL."
+},
+{
+"schema": {
+"type": "string",
+"default": "code"
+},
+"in": "query",
+"name": "response_type",
+"required": false
+}
+],
+"responses": {
+"200": {
+"description": "Default Response"
+}
+}
+}
+},
+"/oauth/profile": {
+"get": {
+"summary": "Retrieve User Profile",
+"tags": [
+"/oauth"
+],
+"description": "Use the access token to retrieve the user profile and check that the session is still valid",
+"security": [
+{
+"bearerAuth": []
+}
+],
+"responses": {
+"200": {
+"description": "Default Response"
+}
+}
+}
+},
+"/oauth/sso/login": {
+"post": {
+"summary": "Oauth Authorize",
+"tags": [
+"/oauth"
+],
+"description": "Perform the authorization step with the user credentials without going through the normal page",
+"requestBody": {
+"content": {
+"application/json": {
+"schema": {
+"type": "object",
+"properties": {
+"client_id": {
+"type": "string",
+"description": "The client ID of your application."
+},
+"password": {
+"type": "string"
+},
+"username": {
+"type": "string"
+},
+"response_type": {
+"type": "string",
+"default": "code"
+},
+"grant_type": {
+"type": "string",
+"default": "password"
+},
+"scope": {
+"type": "string",
+"default": "user"
+}
+},
+"required": [
+"client_id",
+"password",
+"username"
+],
+"additionalProperties": false
+}
+}
+},
+"required": true
+},
+"responses": {
+"200": {
+"description": "Default Response"
+}
+}
+}
+},
+"/oauth/vendor/login": {
+"post": {
+"summary": "Account Vendor Login",
+"tags": [
+"/oauth"
+],
+"description": "Route used by the dashboard to open the correct url based on the vendor",
+"requestBody": {
+"content": {
+"application/json": {
+"schema": {
+"type": "object",
+"properties": {
+"vendor_id": {
+"type": "string",
+"format": "uuid"
+}
+},
+"required": [
+"vendor_id"
+],
+"additionalProperties": false
+}
+}
+},
+"required": true
+},
+"security": [
+{
+"jwtAuth": []
+}
+],
+"responses": {
+"200": {
+"description": "Default Response"
+}
+}
+}
+},
+"/oauth/sso/token": {
+"post": {
+"summary": "Receive the Oauth SSO Token",
+"tags": [
+"/oauth"
+],
+"description": "Completes the OAuth process by checking the access token and generating a JWT. ",
+"requestBody": {
+"content": {
+"application/json": {
+"schema": {
+"type": "object",
+"properties": {
+"access_token": {
+"type": "string",
+"description": "Code received from URL redirect."
+},
+"client_id": {
+"type": "string",
+"description": "The client ID of your application."
+}
+},
+"required": [
+"access_token",
+"client_id"
+],
+"additionalProperties": false
+}
+}
+},
+"required": true
+},
+"responses": {
+"200": {
+"description": "Default Response"
+}
+}
+}
+},
+"/partners/generate/{slug}": {
+"post": {
+"summary": "Partners Generate Api Key",
+"tags": [
+"partners"
+],
+"description": "use this route to re-generate your middleware API key.",
+"parameters": [
+{
+"schema": {
+"type": "string"
+},
+"in": "path",
+"name": "slug",
+"required": true
+}
+],
+"security": [
+{
+"jwtAuth": []
+}
+],
+"responses": {
+"200": {
+"description": "Default Response"
+}
+}
+}
+},
+"/partners/generate/oauth": {
+"post": {
+"summary": "Partners Generate Oauth Credentials",
+"tags": [
+"partners"
+],
+"description": "use this route to re-generate your OAuth credentials.",
+"requestBody": {
+"content": {
+"application/json": {
+"schema": {
+"type": "object",
+"properties": {
+"redirect_url": {
+"type": "string",
+"format": "uri"
+},
+"vendor_id": {
+"type": "string",
+"format": "uuid"
+}
+},
+"required": [
+"redirect_url",
+"vendor_id"
+],
+"additionalProperties": false
+}
+}
+},
+"required": true
+},
+"security": [
+{
+"jwtAuth": []
+}
+],
+"responses": {
+"200": {
+"description": "Default Response"
+}
+}
+}
+}
+},
+"servers": [
+{
+"url": "http://3.105.12.66",
+"description": "API Server"
+}
+],
+"tags": []
+}
